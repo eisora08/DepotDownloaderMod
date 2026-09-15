@@ -1,0 +1,36 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish self-contained linux-x64
+        run: >
+          dotnet publish DepotDownloader/DepotDownloaderMod.csproj
+          -c Release -r linux-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -o ./out
+
+      - name: Zip
+        run: cd out && zip -j ../DepotDownloaderMod-linux-x64.zip DepotDownloaderMod
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: linux-build-${{ github.run_number }}
+          name: "Linux Build ${{ github.run_number }}"
+          files: DepotDownloaderMod-linux-x64.zip
+          draft: false
+          prerelease: false
